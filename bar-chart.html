@@ -9,10 +9,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
 
   <style>
+    body  {
+      font: 14px sans-serif;      
+    }
     .chart div {
       color: white;
       background-color: #057;
-      font: 14px sans-serif;
       text-align: right;
       padding: 5px;
       margin-bottom: 2px;
@@ -24,27 +26,25 @@
 
   <div class="chart"></div>
 
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <p><a href="http://bost.ocks.org/mike/bar/">http://bost.ocks.org/mike/bar/</a></p>
+
+
   <script src="http://d3js.org/d3.v3.min.js"></script>
 
   <script>
-    $(document).ready(function () {
-      var data = [4, 8, 15, 16, 23, 42];
-      
-      var x = d3.scale.linear()
-          .domain([0, d3.max(data)])
-          .range([0, 800]);
+    var data = [4, 8, 15, 16, 23, 42];
+    
+    var x = d3.scale.linear()
+        .domain([0, d3.max(data)])
+        .range([0, 800]);
 
-      d3.select('.chart')
-        .selectAll('div')
-          .data(data)
-        .enter().append('div')
-          .style('width', function(d) { return x(d) + 'px'; })
-          .text(function(d) { return d;});
-    });
+    d3.select('.chart')
+      .selectAll('div')
+        .data(data)
+      .enter().append('div')
+        .style('width', function(d) { return x(d) + 'px'; })
+        .text(function(d) { return d;});
   </script>
-
-  
 
 </body>
 </html>
