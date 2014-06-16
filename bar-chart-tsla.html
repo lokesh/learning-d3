@@ -16,10 +16,6 @@
       fill: steelblue;
     }
 
-/*    .bar:hover {
-      fill: brown;
-    }
-*/    
     .axis text {
       font-size: 12px;
     }
@@ -121,7 +117,7 @@
         height = 500 - margin.top - margin.bottom;
 
     var x = d3.scale.ordinal()
-        .rangeRoundBands([0, width], 0.03);
+        .rangeRoundBands([0, width], 0.02);
 
     var y = d3.scale.linear()
         .range([height, 0]);
@@ -158,14 +154,15 @@
 
       data.forEach(function(d) {
         // Parse "100M" and "100B" strings into numbers
-        d.MarketCapitalization = d.MarketCapitalization.slice(0, -1);
+        d.MarketCapitalization = parseFloat(d.MarketCapitalization.slice(0, -1));
+        console.log(d.MarketCapitalization);
       });
 
 
       x.domain(data.map(function(d) {
         return symbolToName(d.Symbol);
       }));
-      y.domain([0, d3.max(data, function(d) { return d.MarketCapitalization; })]);
+      y.domain([0, d3.max(data.map(function(d) { return d.MarketCapitalization; }))]);
 
       chart.append("g")
           .attr("class", "x axis")
@@ -191,7 +188,10 @@
           .attr("class", "bar")
           .attr("x", function(d) { return x(symbolToName(d.Symbol)); })
           .attr("y", function(d) { return y(d.MarketCapitalization); })
-          .attr("height", function(d) { return height - y(d.MarketCapitalization); })
+          .attr("height", function(d) {
+            console.log(y(d.MarketCapitalization));
+            return height - y(d.MarketCapitalization);
+          })
           .attr("width", x.rangeBand());
     });
 
