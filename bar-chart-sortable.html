@@ -1,0 +1,228 @@
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  <title>Learning D3</title>
+
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <style>
+    body {
+      font: 14px sans-serif;;
+    }
+    .chart {
+      border: 1px solid lightgray;
+    }
+
+    .bar {
+      fill: steelblue;
+    }
+
+    .axis text {
+      font-size: 12px;
+    }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+    .x.axis path {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+  </style>
+
+</head>
+<body>
+
+  <label><input type="checkbox" class="sort-input"> Sort values</label>
+  <svg class="chart"></svg>
+ 
+
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script>
+  
+    var companies = [
+      {
+        'symbol': 'GM',
+        'name': 'GM'
+      },
+      {
+        'symbol': 'F',
+        'name': 'Ford'
+      },
+      {
+        'symbol': 'VLKAY',
+        'name': 'Volkswagen'
+      },
+      {
+        'symbol': 'TM',
+        'name': 'Toyota'
+      },
+      {
+        'symbol': 'TSLA',
+        'name': 'Tesla'
+      },
+      {
+        'symbol': 'NSANY',
+        'name': 'Nissan'
+      },
+      {
+        'symbol': 'FIATY',
+        'name': 'Fiat'
+      },
+      {
+        'symbol': 'BAMXF',
+        'name': 'BMW'
+      },
+      {
+        'symbol': 'AUDVF',
+        'name': 'Audi'
+      },
+      {
+        'symbol': '005380.KS',
+        'name': 'Hyundai'
+      },
+      {
+        'symbol': 'DAI.DE',
+        'name': 'Daimler'
+      }
+    ];
+
+    var symbolToName = function(symbol) {
+      var name;
+      companies.forEach(function(company){
+        if (company.symbol === symbol) { name = company.name; }
+      });
+      return name;
+    };
+
+
+    // YQL Finance Table query
+    // https://developer.yahoo.com/yql/console/
+    var data;
+
+    var yqlCompanies = '';
+    companies.forEach(function(company){ yqlCompanies += '"' + company.symbol + '",'; });
+    yqlCompanies = yqlCompanies.slice(0, -1);
+
+    var yqlStart = 'https://query.yahooapis.com/v1/public/yql?q=';
+    var yqlQuery = 'SELECT * FROM yahoo.finance.quotes WHERE symbol in (' + yqlCompanies +')';
+    var yqlEnd   = '%0A%09%09&format=json&env=http%3A%2F%2Fdatatables.org%2Falltables.env&callback=';
+    var yqlURL   = yqlStart + encodeURIComponent(yqlQuery) + yqlEnd;
+
+
+
+    // D3
+    var margin = {top: 20, right: 30, bottom: 100, left: 40},
+        width = 800 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    var formatMarketCap = function(d) {
+      return (d > 0) ? d + 'B': d;
+    };
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], 0.02);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .tickFormat(formatMarketCap);
+
+    var chart = d3.select(".chart")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    d3.json(yqlURL, function(error, json) {
+      // TODO: handle error
+      
+      data = json.query.results.quote;
+
+      data.forEach(function(d) {
+        d.MarketCapitalization = parseFloat(d.MarketCapitalization.slice(0, -1));
+      });
+
+      x.domain(data.map(function(d) { return symbolToName(d.Symbol); }));
+      y.domain([0, d3.max(data.map(function(d) { return d.MarketCapitalization; }))]);
+
+      chart.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+          .selectAll('text')
+            .attr('transform', "translate(0, 0), rotate(-45)")
+            .style("text-anchor", "end");
+
+      chart.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end")
+          .text("Market Cap");
+      
+      chart.selectAll(".bar")
+          .data(data)
+        .enter().append("rect")
+          .attr("class", "bar")
+          .attr("x", function(d) { return x(symbolToName(d.Symbol)); })
+          .attr("y", function(d) { return y(d.MarketCapitalization); })
+          .attr("width", x.rangeBand())
+          .attr("height", function(d) {
+            return height - y(d.MarketCapitalization);
+          });
+
+      d3.select('.sort-input').on('change', sort);
+
+      // var sortTimeout = setTimeout(function() {
+      //   d3.select("input").property("checked", true).each(sort);
+      // }, 2000);
+
+      function sort() {
+        // Copy-on-write since tweens are evaluated after a delay.
+        var x0 = x.domain(data.sort(this.checked
+            ? function(a, b) { return a.MarketCapitalization - b.MarketCapitalization; }
+            : function(a, b) { return d3.ascending(symbolToName(a.Symbol), symbolToName(b.Symbol)); })
+            .map(function(d) { return symbolToName(d.Symbol); }))
+            .copy();
+
+        var transition = chart.transition().duration(750),
+            delay = function(d, i) { return i * 50; };
+
+        transition.selectAll(".bar")
+            .delay(delay)
+            .attr("x", function(d) {  return x0(symbolToName(d.Symbol)); });
+
+        transition.select(".x.axis")
+            .call(xAxis)
+          .selectAll("g")
+            .delay(delay);
+      }
+    });
+
+  </script>
+
+
+  
+
+</body>
+</html>
