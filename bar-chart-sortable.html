@@ -119,7 +119,6 @@
     var yqlURL   = yqlStart + encodeURIComponent(yqlQuery) + yqlEnd;
 
 
-
     // D3
     var margin = {top: 20, right: 30, bottom: 100, left: 40},
         width = 800 - margin.left - margin.right,
@@ -192,10 +191,6 @@
           });
 
       d3.select('.sort-input').on('change', sort);
-
-      // var sortTimeout = setTimeout(function() {
-      //   d3.select("input").property("checked", true).each(sort);
-      // }, 2000);
 
       function sort() {
         // Copy-on-write since tweens are evaluated after a delay.
